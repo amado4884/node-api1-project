@@ -20,6 +20,7 @@ function App() {
   const [currentUserId, setCurrentUserId] = useState(null);
   const [items, setItems] = useState([]);
   const [editing, setEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -36,14 +37,14 @@ function App() {
   const addUser = async () => {
     await axios
       .post("http://localhost:5000/api/users", { name, bio })
-      .then((res) => setItems([...items, res.data]))
+      .then((res) => setItems([...items, res.data].reverse()))
       .catch((err) => console.log(err));
   };
 
   const deleteUser = async (id) => {
     await axios
       .delete(`http://localhost:5000/api/users/${id}`)
-      .then()
+      .then((res) => setLoading(true))
       .catch((err) => console.log(err));
   };
 
@@ -57,17 +58,26 @@ function App() {
   const updateUser = async (id) => {
     await axios
       .put(`http://localhost:5000/api/users/${id}`, { name, bio })
-      .then()
+      .then((res) => setLoading(true))
       .catch((err) => console.log(err));
   };
 
   const fetchData = async () => {
-    await axios.get("http://localhost:5000/api/users").then((res) => setItems(res.data));
+    await axios.get("http://localhost:5000/api/users").then((res) => {
+      setItems(res.data);
+      setLoading(false);
+    });
+  };
+
+  const clear = () => {
+    setName("");
+    setBio("");
+    setEditing(false);
   };
 
   useEffect(() => {
-    fetchData();
-  }, [items]);
+    if (loading) fetchData();
+  }, [loading]);
 
   return (
     <Container style={{ textAlign: "center" }}>
@@ -79,24 +89,33 @@ function App() {
               <InputGroupAddon addonType="prepend">
                 <InputGroupText>Name: </InputGroupText>
               </InputGroupAddon>
-              <Input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
+              <Input
+                placeholder="Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
             </InputGroup>
             <InputGroup>
               <InputGroupAddon addonType="prepend">
                 <InputGroupText>Bio: </InputGroupText>
               </InputGroupAddon>
-              <Input placeholder="Biography" value={bio} onChange={(e) => setBio(e.target.value)} />
+              <Input
+                placeholder="Biography"
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+              />
             </InputGroup>
             <Container className="d-flex justify-content-center">
               <Button onClick={submit}>{editing ? "Save" : "Submit"}</Button>
+              <Button onClick={clear}>Clear</Button>
             </Container>
           </Form>
         </CardBody>
       </Card>
       {items && (
-        <Container className="d-flex justify-content-center align-items-center flex-wrap">
+        <Container className="d-flex justify-content-center align-items-center flex-wrap my-2">
           {items.map((item) => (
-            <Card key={item.id}>
+            <Card key={item.id} className="m-2">
               <CardTitle>{item.name}</CardTitle>
               <CardBody>
                 <p>{item.bio}</p>
